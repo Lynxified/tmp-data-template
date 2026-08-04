@@ -320,14 +320,13 @@ function extractDateFromText(text) {
           } catch(e) {}
         }
 
-        // Method 4: Check for reply arrow icon (data-testid="reply" with specific context)
+        // Method 4: Check for reply arrow icon inside socialContext
+        // (quote tweets also have status links in socialContext, so we need the icon)
         if (!isReply) {
           try {
-            const replyIndicator = tweet.locator('[data-testid="socialContext"] [href*="/status/"]');
-            const hasReplyIndicator = await replyIndicator.count({ timeout: 500 });
-            if (hasReplyIndicator > 0) {
-              isReply = true;
-            }
+            const replyArrow = tweet.locator('[data-testid="socialContext"] [data-testid="arrow"]');
+            const hasArrow = await replyArrow.count({ timeout: 500 });
+            if (hasArrow > 0) isReply = true;
           } catch(e) {}
         }
 
