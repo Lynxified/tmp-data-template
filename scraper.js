@@ -121,7 +121,9 @@ function extractDateFromText(text) {
     }
     case 'hashtag': {
       const tag = target.replace('#', '').trim();
-      let searchUrl = `https://x.com/search?q=%23${encodeURIComponent(tag)}`;
+      let query = `%23${encodeURIComponent(tag)}`;
+      if (filterReplies) query += `%20-filter%3Areplies`;
+      let searchUrl = `https://x.com/search?q=${query}`;
       if (startDate) searchUrl += `%20since:${startDate}`;
       if (endDate) searchUrl += `%20until:${endDate}`;
       searchUrl += '&src=typed_query&f=live';
@@ -129,10 +131,10 @@ function extractDateFromText(text) {
       break;
     }
     case 'cashtag': {
-      // $TICKER search. X treats $BTC as a cashtag, distinct from #BTC:
-      // %24 is the '$' prefix, mirroring the %23 used for hashtags above.
       const ticker = target.replace('$', '').replace('#', '').trim();
-      let searchUrl = `https://x.com/search?q=%24${encodeURIComponent(ticker)}`;
+      let query = `%24${encodeURIComponent(ticker)}`;
+      if (filterReplies) query += `%20-filter%3Areplies`;
+      let searchUrl = `https://x.com/search?q=${query}`;
       if (startDate) searchUrl += `%20since:${startDate}`;
       if (endDate) searchUrl += `%20until:${endDate}`;
       searchUrl += '&src=typed_query&f=live';
@@ -140,7 +142,9 @@ function extractDateFromText(text) {
       break;
     }
     case 'keyword': {
-      let searchUrl = `https://x.com/search?q=${encodeURIComponent(target)}`;
+      let query = encodeURIComponent(target);
+      if (filterReplies) query += `%20-filter%3Areplies`;
+      let searchUrl = `https://x.com/search?q=${query}`;
       if (startDate) searchUrl += `%20since:${startDate}`;
       if (endDate) searchUrl += `%20until:${endDate}`;
       searchUrl += '&src=typed_query&f=live';
