@@ -125,7 +125,7 @@ function extractDateFromText(text) {
       let searchUrl = `https://x.com/search?q=%23${encodeURIComponent(tag)}`;
       if (startDate) searchUrl += `%20since:${startDate}`;
       if (endDate) searchUrl += `%20until:${endDate}`;
-      searchUrl += '&src=typed_query&f=live';
+      searchUrl += '&src=typed_query';
       url = searchUrl;
       break;
     }
@@ -134,7 +134,7 @@ function extractDateFromText(text) {
       let searchUrl = `https://x.com/search?q=%24${encodeURIComponent(ticker)}`;
       if (startDate) searchUrl += `%20since:${startDate}`;
       if (endDate) searchUrl += `%20until:${endDate}`;
-      searchUrl += '&src=typed_query&f=live';
+      searchUrl += '&src=typed_query';
       url = searchUrl;
       break;
     }
@@ -142,7 +142,7 @@ function extractDateFromText(text) {
       let searchUrl = `https://x.com/search?q=${encodeURIComponent(target)}`;
       if (startDate) searchUrl += `%20since:${startDate}`;
       if (endDate) searchUrl += `%20until:${endDate}`;
-      searchUrl += '&src=typed_query&f=live';
+      searchUrl += '&src=typed_query';
       url = searchUrl;
       break;
     }
