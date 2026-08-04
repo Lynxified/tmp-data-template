@@ -134,6 +134,7 @@ jobs:
           echo "filter_replies=$FILTER_REPLIES" >> $GITHUB_OUTPUT
 
       - name: Run scraper
+        working-directory: /app
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
