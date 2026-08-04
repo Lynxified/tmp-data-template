@@ -284,8 +284,9 @@ function extractDateFromText(text) {
 
         let isReply = false;
 
-        // Method 1: Text-based detection (unambiguous — only matches genuine replies)
-        if (/^Replying\s+to/i.test(text) || text.includes('Replying to')) {
+        // Method 1: Text-based detection (strict — only matches if tweet itself starts with "Replying to")
+        // Using innerText on article catches embedded quote tweets, so we anchor to the start.
+        if (/^\s*Replying\s+to/i.test(text)) {
           isReply = true;
         }
 
