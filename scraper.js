@@ -320,7 +320,10 @@ function extractDateFromText(text) {
           } catch(e) {}
         }
 
-        if (filterReplies && isReply) {
+        // For typed_query (Top results), trust X's own ranking — don't filter replies client-side.
+        // The WordPress UI handles reply filtering at display time via is_reply.
+        const shouldFilterReplies = filterReplies && !url.includes('src=typed_query');
+        if (shouldFilterReplies && isReply) {
           console.log(`  Skipping reply: ${text.substring(0, 50)}...`);
           continue;
         }
