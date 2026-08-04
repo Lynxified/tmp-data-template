@@ -284,26 +284,12 @@ function extractDateFromText(text) {
 
         let isReply = false;
 
-        // Method 1: Text-based detection
+        // Method 1: Text-based detection (unambiguous — only matches genuine replies)
         if (/^Replying\s+to/i.test(text) || text.includes('Replying to')) {
           isReply = true;
         }
 
-        // Method 2: DOM-based detection - socialContext element (reply indicator)
-        if (!isReply) {
-          try {
-            const socialCtx = tweet.locator('[data-testid="socialContext"]');
-            const hasSocialCtx = await socialCtx.count({ timeout: 500 });
-            if (hasSocialCtx > 0) {
-              const ctxText = await socialCtx.first().textContent({ timeout: 500 });
-              if (ctxText && (ctxText.includes('replied') || ctxText.includes('Replied'))) {
-                isReply = true;
-              }
-            }
-          } catch(e) {}
-        }
-
-        // Method 3: Check for "in reply to" links in the tweet
+        // Method 2: Check for "in reply to" links in the tweet DOM
         if (!isReply) {
           try {
             const replyLinks = tweet.locator('a[href*="/in_reply_to"]');
@@ -311,16 +297,6 @@ function extractDateFromText(text) {
             if (hasReplyLinks > 0) {
               isReply = true;
             }
-          } catch(e) {}
-        }
-
-        // Method 4: Check for reply arrow icon inside socialContext
-        // (quote tweets also have status links in socialContext, so we need the icon)
-        if (!isReply) {
-          try {
-            const replyArrow = tweet.locator('[data-testid="socialContext"] [data-testid="arrow"]');
-            const hasArrow = await replyArrow.count({ timeout: 500 });
-            if (hasArrow > 0) isReply = true;
           } catch(e) {}
         }
 
