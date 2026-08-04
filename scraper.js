@@ -122,9 +122,7 @@ function extractDateFromText(text) {
     }
     case 'hashtag': {
       const tag = target.replace('#', '').trim();
-      let query = `%23${encodeURIComponent(tag)}`;
-      if (filterReplies) query += `%20-filter%3Areplies`;
-      let searchUrl = `https://x.com/search?q=${query}`;
+      let searchUrl = `https://x.com/search?q=%23${encodeURIComponent(tag)}`;
       if (startDate) searchUrl += `%20since:${startDate}`;
       if (endDate) searchUrl += `%20until:${endDate}`;
       searchUrl += '&src=typed_query&f=live';
@@ -133,9 +131,7 @@ function extractDateFromText(text) {
     }
     case 'cashtag': {
       const ticker = target.replace('$', '').replace('#', '').trim();
-      let query = `%24${encodeURIComponent(ticker)}`;
-      if (filterReplies) query += `%20-filter%3Areplies`;
-      let searchUrl = `https://x.com/search?q=${query}`;
+      let searchUrl = `https://x.com/search?q=%24${encodeURIComponent(ticker)}`;
       if (startDate) searchUrl += `%20since:${startDate}`;
       if (endDate) searchUrl += `%20until:${endDate}`;
       searchUrl += '&src=typed_query&f=live';
@@ -143,9 +139,7 @@ function extractDateFromText(text) {
       break;
     }
     case 'keyword': {
-      let query = encodeURIComponent(target);
-      if (filterReplies) query += `%20-filter%3Areplies`;
-      let searchUrl = `https://x.com/search?q=${query}`;
+      let searchUrl = `https://x.com/search?q=${encodeURIComponent(target)}`;
       if (startDate) searchUrl += `%20since:${startDate}`;
       if (endDate) searchUrl += `%20until:${endDate}`;
       searchUrl += '&src=typed_query&f=live';
