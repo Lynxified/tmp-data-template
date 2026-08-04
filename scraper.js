@@ -284,8 +284,9 @@ function extractDateFromText(text) {
 
         let isReply = false;
 
-        // Method 1: Check socialContext for "Replying to" — this element is
-        // separate from the tweet body and only appears for genuine replies.
+        // Method 1: socialContext element — X renders this only for replies
+        // with text like "Replying to @user". It is separate from the tweet body,
+        // so embedded quote-tweet text can't false-positive here.
         if (!isReply) {
           try {
             const socialCtx = tweet.locator('[data-testid="socialContext"]');
@@ -299,9 +300,9 @@ function extractDateFromText(text) {
           } catch(e) {}
         }
 
-        // Method 2: innerText fallback — check if the article text contains
-        // "Replying to" anywhere (catches cases where socialContext isn't present).
-        // Note: article innerText includes author header, so we can't anchor to start.
+        // Method 2: innerText fallback — the article text includes the author header,
+        // so "Replying to" appears after the timestamp, not at the start.
+        // Use word-boundary match, not ^ anchor.
         if (!isReply) {
           if (/\bReplying\s+to\b/i.test(text)) {
             isReply = true;
