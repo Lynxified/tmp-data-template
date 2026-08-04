@@ -24,10 +24,11 @@ const maxResults = parseInt(process.env.MAX_RESULTS || config.max_results, 10) |
 const mediaOnly = (process.env.MEDIA_ONLY === 'true') || (config.media_only === true);
 const filterRepliesSetting = (process.env.FILTER_REPLIES || config.filter_replies || 'all').toLowerCase();
 const filterReplies = filterRepliesSetting === 'posts';
+const onlyReplies = filterRepliesSetting === 'replies';
 const keyHash = process.env.KEY_HASH || config.key_hash || '';
 const startDate = process.env.START_DATE || config.start_date || '';
 const endDate = process.env.END_DATE || config.end_date || '';
-console.log('FILTER_REPLIES setting:', filterRepliesSetting, '-> filterReplies:', filterReplies);
+console.log('FILTER_REPLIES setting:', filterRepliesSetting, '-> filterReplies:', filterReplies, 'onlyReplies:', onlyReplies);
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY');
@@ -332,6 +333,10 @@ function extractDateFromText(text) {
 
         if (filterReplies && isReply) {
           console.log(`  Skipping reply: ${text.substring(0, 50)}...`);
+          continue;
+        }
+        if (onlyReplies && !isReply) {
+          console.log(`  Skipping non-reply: ${text.substring(0, 50)}...`);
           continue;
         }
 
