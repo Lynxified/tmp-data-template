@@ -389,8 +389,8 @@ function extractDateFromText(text) {
     console.log(`Scroll ${scrollAttempts + 1}: +${newPosts} new (total: ${posts.length}/${maxResults})`);
     if (newPosts === 0) {
       consecutiveEmptyScrolls++;
-      if (consecutiveEmptyScrolls >= 5) {
-        console.log('5 consecutive empty scrolls — no more posts available');
+      if (consecutiveEmptyScrolls >= 8) {
+        console.log('8 consecutive empty scrolls — no more posts available');
         break;
       }
     } else {
