@@ -284,13 +284,31 @@ function extractDateFromText(text) {
 
         let isReply = false;
 
-        // Method 1: Text-based detection (strict — only matches if tweet itself starts with "Replying to")
-        // Using innerText on article catches embedded quote tweets, so we anchor to the start.
-        if (/^\s*Replying\s+to/i.test(text)) {
-          isReply = true;
+        // Method 1: Check socialContext for "Replying to" — this element is
+        // separate from the tweet body and only appears for genuine replies.
+        if (!isReply) {
+          try {
+            const socialCtx = tweet.locator('[data-testid="socialContext"]');
+            const hasSocialCtx = await socialCtx.count({ timeout: 500 });
+            if (hasSocialCtx > 0) {
+              const ctxText = await socialCtx.first().textContent({ timeout: 500 });
+              if (ctxText && /\bReplying\s+to\b/i.test(ctxText)) {
+                isReply = true;
+              }
+            }
+          } catch(e) {}
         }
 
-        // Method 2: Check for "in reply to" links in the tweet DOM
+        // Method 2: innerText fallback — check if the article text contains
+        // "Replying to" anywhere (catches cases where socialContext isn't present).
+        // Note: article innerText includes author header, so we can't anchor to start.
+        if (!isReply) {
+          if (/\bReplying\s+to\b/i.test(text)) {
+            isReply = true;
+          }
+        }
+
+        // Method 3: Check for "in reply to" links in the tweet DOM
         if (!isReply) {
           try {
             const replyLinks = tweet.locator('a[href*="/in_reply_to"]');
