@@ -22,13 +22,11 @@ const sourceType = process.env.SOURCE_TYPE || config.source_type || 'user';
 const target = process.env.TARGET || config.target || '';
 const maxResults = parseInt(process.env.MAX_RESULTS || config.max_results, 10) || 10;
 const mediaOnly = (process.env.MEDIA_ONLY === 'true') || (config.media_only === true);
-const filterRepliesSetting = (process.env.FILTER_REPLIES || config.filter_replies || 'all').toLowerCase();
-const filterReplies = filterRepliesSetting === 'posts';
-const onlyReplies = filterRepliesSetting === 'replies';
+const filterReplies = process.env.FILTER_REPLIES || config.filter_replies || 'all';
+console.log(`[CONFIG] filter_replies=${filterReplies}`);
 const keyHash = process.env.KEY_HASH || config.key_hash || '';
 const startDate = process.env.START_DATE || config.start_date || '';
 const endDate = process.env.END_DATE || config.end_date || '';
-console.log('FILTER_REPLIES setting:', filterRepliesSetting, '-> filterReplies:', filterReplies, 'onlyReplies:', onlyReplies);
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY');
@@ -125,16 +123,18 @@ function extractDateFromText(text) {
       let searchUrl = `https://x.com/search?q=%23${encodeURIComponent(tag)}`;
       if (startDate) searchUrl += `%20since:${startDate}`;
       if (endDate) searchUrl += `%20until:${endDate}`;
-      searchUrl += '&src=typed_query';
+      searchUrl += '&src=typed_query&f=live';
       url = searchUrl;
       break;
     }
     case 'cashtag': {
+      // $TICKER search. X treats $BTC as a cashtag, distinct from #BTC:
+      // %24 is the '$' prefix, mirroring the %23 used for hashtags above.
       const ticker = target.replace('$', '').replace('#', '').trim();
       let searchUrl = `https://x.com/search?q=%24${encodeURIComponent(ticker)}`;
       if (startDate) searchUrl += `%20since:${startDate}`;
       if (endDate) searchUrl += `%20until:${endDate}`;
-      searchUrl += '&src=typed_query';
+      searchUrl += '&src=typed_query&f=live';
       url = searchUrl;
       break;
     }
@@ -142,7 +142,7 @@ function extractDateFromText(text) {
       let searchUrl = `https://x.com/search?q=${encodeURIComponent(target)}`;
       if (startDate) searchUrl += `%20since:${startDate}`;
       if (endDate) searchUrl += `%20until:${endDate}`;
-      searchUrl += '&src=typed_query';
+      searchUrl += '&src=typed_query&f=live';
       url = searchUrl;
       break;
     }
@@ -320,16 +320,14 @@ function extractDateFromText(text) {
           } catch(e) {}
         }
 
-        // For typed_query (Top results), trust X's own ranking — don't filter replies client-side.
-        // The WordPress UI handles reply filtering at display time via is_reply.
-        const shouldFilterReplies = filterReplies && !url.includes('src=typed_query');
-        if (shouldFilterReplies && isReply) {
-          console.log(`  Skipping reply: ${text.substring(0, 50)}...`);
-          continue;
-        }
-        if (onlyReplies && !isReply) {
-          console.log(`  Skipping non-reply: ${text.substring(0, 50)}...`);
-          continue;
+        // On profile pages, only keep posts whose author matches the target user.
+        // Search pages can include mixed authors, so this filter is profile-only.
+        const isProfilePage = sourceType === 'user' && !url.includes('src=typed_query');
+        if (isProfilePage && href) {
+          const parts = href.split('/');
+          if (parts.length >= 2 && parts[1] && parts[1].toLowerCase() !== username.toLowerCase()) {
+            continue;
+          }
         }
 
         let viewCount = 0;
@@ -382,15 +380,15 @@ function extractDateFromText(text) {
     console.log(`Scroll ${scrollAttempts + 1}: +${newPosts} new (total: ${posts.length}/${maxResults})`);
     if (newPosts === 0) {
       consecutiveEmptyScrolls++;
-      if (consecutiveEmptyScrolls >= 8) {
-        console.log('8 consecutive empty scrolls — no more posts available');
+      if (consecutiveEmptyScrolls >= 3) {
+        console.log('3 consecutive empty scrolls â€” no more posts available');
         break;
       }
     } else {
       consecutiveEmptyScrolls = 0;
     }
     if (posts.length >= maxResults) break;
-    await page.evaluate(() => window.scrollBy(0, 1200));
+    await page.evaluate(() => window.scrollBy(0, 2000));
     await page.waitForTimeout(3000);
     scrollAttempts++;
   }
