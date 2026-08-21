@@ -82,3 +82,4 @@ jobs:
           MAX_RESULTS: ${{ steps.params.outputs.MAX_RESULTS }}
           MEDIA_ONLY: ${{ steps.params.outputs.MEDIA_ONLY }}
           RAW_QUERY: ${{ steps.params.outputs.RAW_QUERY }}
+          KEY_HASH: ${{ secrets.KEY_HASH }}
