@@ -139,6 +139,15 @@ function extractDateFromText(text) {
       url = searchUrl;
       break;
     }
+    case 'cashtag': {
+      const tag = target.replace('$', '').trim();
+      let searchUrl = `https://x.com/search?q=%24${encodeURIComponent(tag)}`;
+      if (startDate) searchUrl += `%20since:${startDate}`;
+      if (endDate) searchUrl += `%20until:${endDate}`;
+      searchUrl += '&src=typed_query&f=live';
+      url = searchUrl;
+      break;
+    }
     case 'url': {
       url = target.startsWith('http') ? target : `https://x.com/${target}`;
       break;
