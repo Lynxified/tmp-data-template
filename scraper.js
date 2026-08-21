@@ -327,6 +327,10 @@ function extractDateFromText(text) {
           } catch(e) {}
         }
 
+        // Apply filter_replies: skip posts/replies based on user selection
+        if (filterReplies === 'posts' && isReply) continue;
+        if (filterReplies === 'replies' && !isReply) continue;
+
         // On profile pages, only keep posts whose author matches the target user.
         // Search pages can include mixed authors, so this filter is profile-only.
         const isProfilePage = sourceType === 'user' && !url.includes('src=typed_query');
