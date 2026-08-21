@@ -22,19 +22,18 @@ const sourceType = process.env.SOURCE_TYPE || config.source_type || 'user';
 const target = process.env.TARGET || config.target || '';
 const maxResults = parseInt(process.env.MAX_RESULTS || config.max_results, 10) || 10;
 const mediaOnly = (process.env.MEDIA_ONLY === 'true') || (config.media_only === true);
-const filterReplies = process.env.FILTER_REPLIES || config.filter_replies || 'all';
-console.log(`[CONFIG] filter_replies=${filterReplies}`);
 const keyHash = process.env.KEY_HASH || config.key_hash || '';
 const startDate = process.env.START_DATE || config.start_date || '';
 const endDate = process.env.END_DATE || config.end_date || '';
+const rawQuery = process.env.RAW_QUERY || config.raw_query || '';
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY');
   process.exit(1);
 }
 
-if (!target) {
-  console.error('Missing target in env or CONFIG_JSON');
+if (!target && !rawQuery) {
+  console.error('Missing target or raw_query in env or CONFIG_JSON');
   process.exit(1);
 }
 
@@ -112,6 +111,11 @@ function extractDateFromText(text) {
   const page = await context.newPage();
 
   let url = '';
+
+  if (rawQuery) {
+    url = `https://x.com/search?q=${encodeURIComponent(rawQuery)}&src=typed_query&f=live`;
+    console.log(`Advanced search query: ${rawQuery}`);
+  } else {
   switch (sourceType) {
     case 'user': {
       const username = target.replace('@', '').trim();
@@ -121,17 +125,6 @@ function extractDateFromText(text) {
     case 'hashtag': {
       const tag = target.replace('#', '').trim();
       let searchUrl = `https://x.com/search?q=%23${encodeURIComponent(tag)}`;
-      if (startDate) searchUrl += `%20since:${startDate}`;
-      if (endDate) searchUrl += `%20until:${endDate}`;
-      searchUrl += '&src=typed_query&f=live';
-      url = searchUrl;
-      break;
-    }
-    case 'cashtag': {
-      // $TICKER search. X treats $BTC as a cashtag, distinct from #BTC:
-      // %24 is the '$' prefix, mirroring the %23 used for hashtags above.
-      const ticker = target.replace('$', '').replace('#', '').trim();
-      let searchUrl = `https://x.com/search?q=%24${encodeURIComponent(ticker)}`;
       if (startDate) searchUrl += `%20since:${startDate}`;
       if (endDate) searchUrl += `%20until:${endDate}`;
       searchUrl += '&src=typed_query&f=live';
@@ -152,6 +145,7 @@ function extractDateFromText(text) {
     }
     default:
       url = `https://x.com/${target.replace('@', '')}`;
+  }
   }
 
   console.log(`Scraping: ${url}`);
@@ -186,13 +180,6 @@ function extractDateFromText(text) {
           ? `https://x.com${href}`
           : `https://x.com/${username}/status/unknown-${Date.now()}-${i}`;
 
-
-        let avatarUrl = '';
-        try {
-          const avatarEl = tweet.locator('img[src*="profile_images"]').first();
-          const avatarSrc = await avatarEl.getAttribute('src', { timeout: 1000 });
-          if (avatarSrc) avatarUrl = avatarSrc.split('?')[0];
-        } catch(e) {}
         let postTime = '';
         const timeSelectors = ['time', '[datetime]', 'span[data-testid="Time"]'];
         for (const sel of timeSelectors) {
@@ -289,82 +276,10 @@ function extractDateFromText(text) {
           } catch(e2) {}
         }
 
-        let isReply = false;
-
-        // Method 1: socialContext element — X renders this only for replies
-        // with text like "Replying to @user". It is separate from the tweet body,
-        // so embedded quote-tweet text can't false-positive here.
-        if (!isReply) {
-          try {
-            const socialCtx = tweet.locator('[data-testid="socialContext"]');
-            const hasSocialCtx = await socialCtx.count({ timeout: 500 });
-            if (hasSocialCtx > 0) {
-              const ctxText = await socialCtx.first().textContent({ timeout: 500 });
-              if (ctxText && /\bReplying\s+to\b/i.test(ctxText)) {
-                isReply = true;
-              }
-            }
-          } catch(e) {}
-        }
-
-        // Method 2: innerText fallback — the article text includes the author header,
-        // so "Replying to" appears after the timestamp, not at the start.
-        // Use word-boundary match, not ^ anchor.
-        if (!isReply) {
-          if (/\bReplying\s+to\b/i.test(text)) {
-            isReply = true;
-          }
-        }
-
-        // Method 3: Check for "in reply to" links in the tweet DOM
-        if (!isReply) {
-          try {
-            const replyLinks = tweet.locator('a[href*="/in_reply_to"]');
-            const hasReplyLinks = await replyLinks.count({ timeout: 500 });
-            if (hasReplyLinks > 0) {
-              isReply = true;
-            }
-          } catch(e) {}
-        }
-
-        // Apply filter_replies: skip posts/replies based on user selection
-        if (filterReplies === 'posts' && isReply) continue;
-        if (filterReplies === 'replies' && !isReply) continue;
-
-        // On profile pages, only keep posts whose author matches the target user.
-        // Search pages can include mixed authors, so this filter is profile-only.
-        const isProfilePage = sourceType === 'user' && !url.includes('src=typed_query');
-        if (isProfilePage && href) {
-          const parts = href.split('/');
-          if (parts.length >= 2 && parts[1] && parts[1].toLowerCase() !== username.toLowerCase()) {
-            continue;
-          }
-        }
-
-        let viewCount = 0;
-        try {
-          const viewsSel = tweet.locator('a[href*="/analytics"]');
-          const vc = await viewsSel.count({ timeout: 300 });
-          if (vc > 0) {
-            const viewsLabel = await viewsSel.first().getAttribute('aria-label', { timeout: 300 });
-            viewCount = parseEngagementNum(viewsLabel || '');
-          }
-        } catch(e2) {}
-
-        let postAuthor = username;
-        let postUsername = `@${username}`;
-        if (href) {
-          const parts = href.split('/');
-          if (parts.length >= 2 && parts[1]) {
-            postAuthor = parts[1];
-            postUsername = `@${parts[1]}`;
-          }
-        }
-
         posts.push({
           tweet_id: tweetId || `unknown-${Date.now()}-${i}`,
-          author: postAuthor,
-          username: postUsername,
+          author: username,
+          username: `@${username}`,
           text: text.substring(0, 2000),
           created_at: postTime || new Date().toISOString(),
           url: tweetUrl,
@@ -372,11 +287,8 @@ function extractDateFromText(text) {
           like_count: likeCount,
           reply_count: replyCount,
           quote_count: quoteCount,
-          view_count: viewCount,
-          is_reply: isReply,
           has_media: hasMedia,
           media_urls: mediaUrls.length > 0 ? JSON.stringify(mediaUrls) : '',
-          author_avatar: avatarUrl,
           api_key_hash: keyHash,
         });
         newCount++;
@@ -400,7 +312,7 @@ function extractDateFromText(text) {
       consecutiveEmptyScrolls = 0;
     }
     if (posts.length >= maxResults) break;
-    await page.evaluate(() => window.scrollBy(0, 2000));
+    await page.evaluate(() => window.scrollBy(0, 1200));
     await page.waitForTimeout(3000);
     scrollAttempts++;
   }
