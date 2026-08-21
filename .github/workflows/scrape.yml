@@ -68,7 +68,7 @@ jobs:
         run: |
           for i in $(seq 1 $ITERATIONS); do
             echo "=== Run $i of $ITERATIONS ==="
-            node zix-scraper.js
+            node scraper.js
             if [ $i -lt $ITERATIONS ]; then
               echo "Sleeping 15 minutes until next run..."
               sleep 900
