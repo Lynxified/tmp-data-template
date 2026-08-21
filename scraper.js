@@ -373,7 +373,6 @@ function extractDateFromText(text) {
           has_media: hasMedia,
           media_urls: mediaUrls.length > 0 ? JSON.stringify(mediaUrls) : '',
           author_avatar: avatarUrl,
-          author_avatar: avatarUrl,
           api_key_hash: keyHash,
         });
         newCount++;
