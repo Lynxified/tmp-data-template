@@ -156,7 +156,7 @@ function extractDateFromText(text) {
   const collectedIds = new Set();
   const posts = [];
   let scrollAttempts = 0;
-  const maxScrollAttempts = Math.ceil(maxResults / 2);
+  const maxScrollAttempts = maxResults * 2;
   let consecutiveEmptyScrolls = 0;
   const username = target.replace('@', '').trim();
 
@@ -232,7 +232,7 @@ function extractDateFromText(text) {
         if (tweetId && collectedIds.has(tweetId)) continue;
         if (tweetId) collectedIds.add(tweetId);
 
-        let retweetCount = 0, likeCount = 0, replyCount = 0, quoteCount = 0;
+        let retweetCount = 0, likeCount = 0, replyCount = 0, quoteCount = 0, viewCount = 0;
         try {
           const groupEl = tweet.locator('[role="group"]').first();
           const hasGroup = await groupEl.count({ timeout: 2000 });
@@ -248,6 +248,16 @@ function extractDateFromText(text) {
               likeCount = parseEngagementNum(nums[0]);
               retweetCount = parseEngagementNum(nums[1]);
             }
+          }
+        } catch(e) {}
+
+        try {
+          const viewEl = tweet.locator('a[href*="/analytics"]').first();
+          const viewCount2 = await viewEl.count({ timeout: 500 });
+          if (viewCount2) {
+            const viewText = await viewEl.textContent({ timeout: 500 });
+            const viewMatch = (viewText || '').match(/([\d,.]+[KkMm]?)/);
+            if (viewMatch) viewCount = parseEngagementNum(viewMatch[1]);
           }
         } catch(e) {}
         if (retweetCount === 0 && likeCount === 0 && replyCount === 0) {
@@ -304,6 +314,7 @@ function extractDateFromText(text) {
           like_count: likeCount,
           reply_count: replyCount,
           quote_count: quoteCount,
+          view_count: viewCount,
           has_media: hasMedia,
           media_urls: mediaUrls.length > 0 ? JSON.stringify(mediaUrls) : '',
           api_key_hash: keyHash,
@@ -323,16 +334,16 @@ function extractDateFromText(text) {
     console.log(`Scroll ${scrollAttempts + 1}: +${newPosts} new (total: ${posts.length}/${maxResults})`);
     if (newPosts === 0) {
       consecutiveEmptyScrolls++;
-      if (consecutiveEmptyScrolls >= 3) {
-        console.log('3 consecutive empty scrolls — no more posts available');
+      if (consecutiveEmptyScrolls >= 5) {
+        console.log('5 consecutive empty scrolls — no more posts available');
         break;
       }
     } else {
       consecutiveEmptyScrolls = 0;
     }
     if (posts.length >= maxResults) break;
-    await page.evaluate(() => window.scrollBy(0, 1200));
-    await page.waitForTimeout(3000);
+    await page.evaluate(() => window.scrollBy(0, 1500));
+    await page.waitForTimeout(4000);
     scrollAttempts++;
   }
   console.log(`Final collection: ${posts.length} posts`);
