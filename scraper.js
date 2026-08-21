@@ -186,12 +186,6 @@ function extractDateFromText(text) {
           ? `https://x.com${href}`
           : `https://x.com/${username}/status/unknown-${Date.now()}-${i}`;
 
-        let avatarUrl = '';
-        try {
-          const avatarEl = tweet.locator('img[src*="profile_images"]').first();
-          const avatarSrc = await avatarEl.getAttribute('src', { timeout: 1000 });
-          if (avatarSrc) avatarUrl = avatarSrc.split('?')[0];
-        } catch(e) {}
 
         let postTime = '';
         const timeSelectors = ['time', '[datetime]', 'span[data-testid="Time"]'];
