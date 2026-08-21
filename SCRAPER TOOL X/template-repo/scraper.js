@@ -158,7 +158,12 @@ function extractDateFromText(text) {
   let scrollAttempts = 0;
   const maxScrollAttempts = maxResults * 2;
   let consecutiveEmptyScrolls = 0;
-  const username = target.replace('@', '').trim();
+
+  let username = target.replace('@', '').trim();
+  if (rawQuery) {
+    const fromMatch = rawQuery.match(/\bfrom[:\s]+@?(\w+)/i);
+    if (fromMatch) username = fromMatch[1];
+  }
 
   async function extractPostsFromDOM() {
     const articleCount = await page.locator('article').count();
