@@ -139,6 +139,20 @@ function extractDateFromText(text) {
       url = searchUrl;
       break;
     }
+    case 'cashtag': {
+      let tagText = target.replace('$', '').trim();
+      let tag = tagText.split(/\s+/)[0];
+      let searchUrl = `https://x.com/search?q=%24${encodeURIComponent(tag)}`;
+      const sinceMatch = target.match(/\bsince:(\S+)/i);
+      const untilMatch = target.match(/\buntil:(\S+)/i);
+      if (sinceMatch) searchUrl += `%20since:${sinceMatch[1]}`;
+      else if (startDate) searchUrl += `%20since:${startDate}`;
+      if (untilMatch) searchUrl += `%20until:${untilMatch[1]}`;
+      else if (endDate) searchUrl += `%20until:${endDate}`;
+      searchUrl += '&src=typed_query&f=live';
+      url = searchUrl;
+      break;
+    }
     case 'url': {
       url = target.startsWith('http') ? target : `https://x.com/${target}`;
       break;
@@ -156,7 +170,7 @@ function extractDateFromText(text) {
   const collectedIds = new Set();
   const posts = [];
   let scrollAttempts = 0;
-  const maxScrollAttempts = Math.ceil(maxResults / 2);
+  const maxScrollAttempts = maxResults * 2;
   let consecutiveEmptyScrolls = 0;
   const username = target.replace('@', '').trim();
 
@@ -175,6 +189,19 @@ function extractDateFromText(text) {
           const linkEl = tweet.locator('a[href*="/status/"]').first();
           href = await linkEl.getAttribute('href', { timeout: 5000 });
         } catch(e) {}
+
+        let tweetAuthor = username;
+        let tweetHandle = `@${username}`;
+        if (href) {
+          const parts = href.split('/status/');
+          if (parts[0]) {
+            const handle = parts[0].replace(/^\//, '').trim();
+            if (handle) {
+              tweetAuthor = handle;
+              tweetHandle = `@${handle}`;
+            }
+          }
+        }
 
         const tweetUrl = href
           ? `https://x.com${href}`
@@ -278,8 +305,8 @@ function extractDateFromText(text) {
 
         posts.push({
           tweet_id: tweetId || `unknown-${Date.now()}-${i}`,
-          author: username,
-          username: `@${username}`,
+          author: tweetAuthor,
+          username: tweetHandle,
           text: text.substring(0, 2000),
           created_at: postTime || new Date().toISOString(),
           url: tweetUrl,
