@@ -203,7 +203,7 @@ function extractDateFromText(text) {
 
         const tweetUrl = href
           ? `https://x.com${href}`
-          : `https://x.com/${username}/status/unknown-${Date.now()}-${i}`;
+          : `https://x.com/${tweetAuthor}/status/unknown-${Date.now()}-${i}`;
 
         let postTime = '';
         const timeSelectors = ['time', '[datetime]', 'span[data-testid="Time"]'];
@@ -253,6 +253,15 @@ function extractDateFromText(text) {
         const tweetId = href
           ? href.split('/status/')[1]?.split('?')[0]
           : null;
+
+        // Extract actual author handle from tweet URL (e.g., /handle/status/123)
+        let tweetAuthor = username;
+        if (href) {
+          const parts = href.split('/');
+          if (parts.length >= 2 && parts[1]) {
+            tweetAuthor = parts[1].replace('@', '');
+          }
+        }
 
         if (tweetId && collectedIds.has(tweetId)) continue;
         if (tweetId) collectedIds.add(tweetId);
@@ -330,8 +339,8 @@ function extractDateFromText(text) {
 
         posts.push({
           tweet_id: tweetId || `unknown-${Date.now()}-${i}`,
-          author: username,
-          username: `@${username}`,
+          author: tweetAuthor,
+          username: `@${tweetAuthor}`,
           text: text.substring(0, 2000),
           created_at: postTime || new Date().toISOString(),
           url: tweetUrl,
