@@ -1,11 +1,10 @@
-name: Scrape Trail2Crypto
+name: Guildera Scraper
+
 on:
-  schedule:
-    - cron: '0 */6 * * *'
   workflow_dispatch:
     inputs:
       source_type:
-        description: 'Source type (user/hashtag/keyword/url)'
+        description: 'Source type (user/hashtag/keyword/url/cashtag)'
         required: false
         default: ''
         type: string
@@ -25,7 +24,7 @@ on:
         default: ''
         type: string
       raw_query:
-        description: 'Advanced search raw query (overrides source_type/target)'
+        description: 'Advanced search raw query'
         required: false
         default: ''
         type: string
@@ -38,7 +37,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '22'
           cache: npm
       - run: npm ci
       - run: npx playwright install chromium
@@ -46,40 +45,14 @@ jobs:
         run: echo "$X_STATE" | base64 -d > state.json
         env:
           X_STATE: ${{ secrets.X_STATE }}
-      - name: Determine scrape params
-        id: params
-        run: |
-          if [ -n "${{ github.event.inputs.source_type }}" ]; then
-            echo "SOURCE_TYPE=${{ github.event.inputs.source_type }}" >> $GITHUB_OUTPUT
-            echo "TARGET=${{ github.event.inputs.target }}" >> $GITHUB_OUTPUT
-            echo "MAX_RESULTS=${{ github.event.inputs.max_results }}" >> $GITHUB_OUTPUT
-            echo "MEDIA_ONLY=${{ github.event.inputs.media_only }}" >> $GITHUB_OUTPUT
-            echo "RAW_QUERY=${{ github.event.inputs.raw_query }}" >> $GITHUB_OUTPUT
-            echo "ITERATIONS=1" >> $GITHUB_OUTPUT
-          else
-            echo "SOURCE_TYPE=user" >> $GITHUB_OUTPUT
-            echo "TARGET=Trail2Crypto" >> $GITHUB_OUTPUT
-            echo "MAX_RESULTS=10" >> $GITHUB_OUTPUT
-            echo "MEDIA_ONLY=false" >> $GITHUB_OUTPUT
-            echo "RAW_QUERY=" >> $GITHUB_OUTPUT
-            echo "ITERATIONS=24" >> $GITHUB_OUTPUT
-          fi
       - name: Run scraper
-        run: |
-          for i in $(seq 1 $ITERATIONS); do
-            echo "=== Run $i of $ITERATIONS ==="
-            node scraper.js
-            if [ $i -lt $ITERATIONS ]; then
-              echo "Sleeping 15 minutes until next run..."
-              sleep 900
-            fi
-          done
+        run: node scraper.js
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-          SOURCE_TYPE: ${{ steps.params.outputs.SOURCE_TYPE }}
-          TARGET: ${{ steps.params.outputs.TARGET }}
-          MAX_RESULTS: ${{ steps.params.outputs.MAX_RESULTS }}
-          MEDIA_ONLY: ${{ steps.params.outputs.MEDIA_ONLY }}
-          RAW_QUERY: ${{ steps.params.outputs.RAW_QUERY }}
+          SOURCE_TYPE: ${{ github.event.inputs.source_type || '' }}
+          TARGET: ${{ github.event.inputs.target || '' }}
+          MAX_RESULTS: ${{ github.event.inputs.max_results || '10' }}
+          MEDIA_ONLY: ${{ github.event.inputs.media_only || 'false' }}
+          RAW_QUERY: ${{ github.event.inputs.raw_query || '' }}
           KEY_HASH: ${{ secrets.KEY_HASH }}
