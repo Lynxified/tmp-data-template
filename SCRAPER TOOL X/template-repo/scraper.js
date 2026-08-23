@@ -123,27 +123,45 @@ function extractDateFromText(text) {
       break;
     }
     case 'hashtag': {
-      const tag = target.replace('#', '').trim();
+      // Extract dates from target if present
+      let tagText = target.replace('#', '').trim();
+      let tag = tagText.split(/\s+/)[0]; // Just the hashtag word
       let searchUrl = `https://x.com/search?q=%23${encodeURIComponent(tag)}`;
-      if (startDate) searchUrl += `%20since:${startDate}`;
-      if (endDate) searchUrl += `%20until:${endDate}`;
+      const sinceMatch = target.match(/\bsince:(\S+)/i);
+      const untilMatch = target.match(/\buntil:(\S+)/i);
+      if (sinceMatch) searchUrl += `%20since:${sinceMatch[1]}`;
+      else if (startDate) searchUrl += `%20since:${startDate}`;
+      if (untilMatch) searchUrl += `%20until:${untilMatch[1]}`;
+      else if (endDate) searchUrl += `%20until:${endDate}`;
       searchUrl += '&src=typed_query&f=live';
       url = searchUrl;
       break;
     }
     case 'keyword': {
-      let searchUrl = `https://x.com/search?q=${encodeURIComponent(target)}`;
-      if (startDate) searchUrl += `%20since:${startDate}`;
-      if (endDate) searchUrl += `%20until:${endDate}`;
+      // Dates may already be baked into target, so just encode the whole thing
+      let kwQuery = target;
+      if (!/\b(since|until):/i.test(kwQuery)) {
+        // No dates in target, add from env if present
+        if (startDate) kwQuery += ` since:${startDate}`;
+        if (endDate) kwQuery += ` until:${endDate}`;
+      }
+      let searchUrl = `https://x.com/search?q=${encodeURIComponent(kwQuery)}`;
       searchUrl += '&src=typed_query&f=live';
       url = searchUrl;
       break;
     }
     case 'cashtag': {
-      const tag = target.replace('$', '').trim();
+      // Extract dates from target if present (e.g., "$RMV since:2026-08-01 until:2026-08-23")
+      let tagText = target.replace('$', '').trim();
+      let tag = tagText.split(/\s+/)[0]; // Just the ticker symbol
       let searchUrl = `https://x.com/search?q=%24${encodeURIComponent(tag)}`;
-      if (startDate) searchUrl += `%20since:${startDate}`;
-      if (endDate) searchUrl += `%20until:${endDate}`;
+      // Check for since/until in target
+      const sinceMatch = target.match(/\bsince:(\S+)/i);
+      const untilMatch = target.match(/\buntil:(\S+)/i);
+      if (sinceMatch) searchUrl += `%20since:${sinceMatch[1]}`;
+      else if (startDate) searchUrl += `%20since:${startDate}`;
+      if (untilMatch) searchUrl += `%20until:${untilMatch[1]}`;
+      else if (endDate) searchUrl += `%20until:${endDate}`;
       searchUrl += '&src=typed_query&f=live';
       url = searchUrl;
       break;
@@ -169,7 +187,14 @@ function extractDateFromText(text) {
   let consecutiveEmptyScrolls = 0;
 
   let username = target.replace('@', '').trim();
-  if (rawQuery) {
+  // For cashtag/hashtag, use the tag symbol as the display name
+  if (sourceType === 'cashtag') {
+    const tagPart = target.replace('$', '').trim().split(/\s+/)[0];
+    username = '$' + tagPart;
+  } else if (sourceType === 'hashtag') {
+    const tagPart = target.replace('#', '').trim().split(/\s+/)[0];
+    username = '#' + tagPart;
+  } else if (rawQuery) {
     const fromMatch = rawQuery.match(/\bfrom[:\s]+@?(\w+)/i);
     if (fromMatch) {
       username = fromMatch[1];
