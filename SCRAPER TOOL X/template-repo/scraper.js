@@ -171,7 +171,18 @@ function extractDateFromText(text) {
   let username = target.replace('@', '').trim();
   if (rawQuery) {
     const fromMatch = rawQuery.match(/\bfrom[:\s]+@?(\w+)/i);
-    if (fromMatch) username = fromMatch[1];
+    if (fromMatch) {
+      username = fromMatch[1];
+    } else {
+      // No from: in raw query — extract first word that looks like a handle, or use "search"
+      const firstWord = rawQuery.split(/\s+/)[0] || '';
+      const cleanWord = firstWord.replace(/[@:]/g, '').trim();
+      if (cleanWord && cleanWord.length > 1 && /^[a-zA-Z0-9_]+$/.test(cleanWord) && !/^(since|until|filter|min_|exact|any|none|to|mention|lang)$/i.test(cleanWord)) {
+        username = cleanWord;
+      } else {
+        username = 'search';
+      }
+    }
   }
 
   async function extractPostsFromDOM() {
