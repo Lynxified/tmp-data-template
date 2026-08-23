@@ -50,11 +50,21 @@ jobs:
         id: params
         run: |
           if [ -n "${{ github.event.inputs.source_type }}" ]; then
-            echo "SOURCE_TYPE=${{ github.event.inputs.source_type }}" >> $GITHUB_OUTPUT
-            echo "TARGET=${{ github.event.inputs.target }}" >> $GITHUB_OUTPUT
-            echo "MAX_RESULTS=${{ github.event.inputs.max_results }}" >> $GITHUB_OUTPUT
-            echo "MEDIA_ONLY=${{ github.event.inputs.media_only }}" >> $GITHUB_OUTPUT
-            echo "RAW_QUERY=${{ github.event.inputs.raw_query }}" >> $GITHUB_OUTPUT
+            echo "SOURCE_TYPE<<GHEOF" >> $GITHUB_OUTPUT
+            echo "${{ github.event.inputs.source_type }}" >> $GITHUB_OUTPUT
+            echo "GHEOF" >> $GITHUB_OUTPUT
+            echo "TARGET<<GHEOF" >> $GITHUB_OUTPUT
+            echo "${{ github.event.inputs.target }}" >> $GITHUB_OUTPUT
+            echo "GHEOF" >> $GITHUB_OUTPUT
+            echo "MAX_RESULTS<<GHEOF" >> $GITHUB_OUTPUT
+            echo "${{ github.event.inputs.max_results }}" >> $GITHUB_OUTPUT
+            echo "GHEOF" >> $GITHUB_OUTPUT
+            echo "MEDIA_ONLY<<GHEOF" >> $GITHUB_OUTPUT
+            echo "${{ github.event.inputs.media_only }}" >> $GITHUB_OUTPUT
+            echo "GHEOF" >> $GITHUB_OUTPUT
+            echo "RAW_QUERY<<GHEOF" >> $GITHUB_OUTPUT
+            echo "${{ github.event.inputs.raw_query }}" >> $GITHUB_OUTPUT
+            echo "GHEOF" >> $GITHUB_OUTPUT
             echo "ITERATIONS=1" >> $GITHUB_OUTPUT
           else
             echo "SOURCE_TYPE=user" >> $GITHUB_OUTPUT

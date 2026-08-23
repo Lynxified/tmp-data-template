@@ -25,13 +25,8 @@ on:
         required: false
         default: ''
         type: string
-      start_date:
-        description: 'Start date (YYYY-MM-DD)'
-        required: false
-        default: ''
-        type: string
-      end_date:
-        description: 'End date (YYYY-MM-DD)'
+      raw_query:
+        description: 'Advanced search raw query'
         required: false
         default: ''
         type: string
@@ -83,36 +78,47 @@ jobs:
             TARGET=$(echo '${{ github.event.client_payload }}' | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('target',''))" 2>/dev/null || echo "")
             MAX_RESULTS=$(echo '${{ github.event.client_payload }}' | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('max_results','10'))" 2>/dev/null || echo "10")
             MEDIA_ONLY=$(echo '${{ github.event.client_payload }}' | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('media_only','false'))" 2>/dev/null || echo "false")
-            START_DATE=$(echo '${{ github.event.client_payload }}' | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('start_date',''))" 2>/dev/null || echo "")
-            END_DATE=$(echo '${{ github.event.client_payload }}' | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('end_date',''))" 2>/dev/null || echo "")
+            RAW_QUERY=$(echo '${{ github.event.client_payload }}' | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('raw_query',''))" 2>/dev/null || echo "")
           elif [ -n "${{ github.event.inputs.source_type }}" ]; then
             echo "Using workflow_dispatch inputs"
-            SOURCE_TYPE="${{ github.event.inputs.source_type }}"
-            TARGET="${{ github.event.inputs.target }}"
-            MAX_RESULTS="${{ github.event.inputs.max_results }}"
-            MEDIA_ONLY="${{ github.event.inputs.media_only }}"
-            START_DATE="${{ github.event.inputs.start_date }}"
-            END_DATE="${{ github.event.inputs.end_date }}"
+            SOURCE_TYPE=$(cat <<'GHEOF'
+${{ github.event.inputs.source_type }}
+GHEOF
+)
+            TARGET=$(cat <<'GHEOF'
+${{ github.event.inputs.target }}
+GHEOF
+)
+            MAX_RESULTS=$(cat <<'GHEOF'
+${{ github.event.inputs.max_results }}
+GHEOF
+)
+            MEDIA_ONLY=$(cat <<'GHEOF'
+${{ github.event.inputs.media_only }}
+GHEOF
+)
+            RAW_QUERY=$(cat <<'GHEOF'
+${{ github.event.inputs.raw_query }}
+GHEOF
+)
           else
             echo "Using CONFIG_JSON secret fallback"
             SOURCE_TYPE=$(echo '${{ secrets.CONFIG_JSON }}' | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('source_type','user'))" 2>/dev/null || echo "user")
             TARGET=$(echo '${{ secrets.CONFIG_JSON }}' | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('target',''))" 2>/dev/null || echo "")
             MAX_RESULTS=$(echo '${{ secrets.CONFIG_JSON }}' | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('max_results','10'))" 2>/dev/null || echo "10")
             MEDIA_ONLY=$(echo '${{ secrets.CONFIG_JSON }}' | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('media_only','false'))" 2>/dev/null || echo "false")
-            START_DATE=$(echo '${{ secrets.CONFIG_JSON }}' | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('start_date',''))" 2>/dev/null || echo "")
-            END_DATE=$(echo '${{ secrets.CONFIG_JSON }}' | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('end_date',''))" 2>/dev/null || echo "")
+            RAW_QUERY=$(echo '${{ secrets.CONFIG_JSON }}' | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('raw_query',''))" 2>/dev/null || echo "")
           fi
           if [ "$MEDIA_ONLY" = "true" ]; then MEDIA_BOOL="true"; else MEDIA_BOOL="false"; fi
           KH="${{ secrets.KEY_HASH }}"
-          CONFIG="{\"source_type\":\"${SOURCE_TYPE}\",\"target\":\"${TARGET}\",\"max_results\":\"${MAX_RESULTS}\",\"media_only\":${MEDIA_BOOL},\"key_hash\":\"${KH}\",\"start_date\":\"${START_DATE}\",\"end_date\":\"${END_DATE}\"}"
+          CONFIG="{\"source_type\":\"${SOURCE_TYPE}\",\"target\":\"${TARGET}\",\"max_results\":\"${MAX_RESULTS}\",\"media_only\":${MEDIA_BOOL},\"key_hash\":\"${KH}\",\"raw_query\":\"${RAW_QUERY}\"}"
           echo "Config: $CONFIG"
           echo "config=$CONFIG" >> $GITHUB_OUTPUT
           echo "source_type=$SOURCE_TYPE" >> $GITHUB_OUTPUT
           echo "target=$TARGET" >> $GITHUB_OUTPUT
           echo "max_results=$MAX_RESULTS" >> $GITHUB_OUTPUT
           echo "media_only=$MEDIA_ONLY" >> $GITHUB_OUTPUT
-          echo "start_date=$START_DATE" >> $GITHUB_OUTPUT
-          echo "end_date=$END_DATE" >> $GITHUB_OUTPUT
+          echo "raw_query=$RAW_QUERY" >> $GITHUB_OUTPUT
 
       - name: Run scraper
         env:
@@ -125,6 +131,5 @@ jobs:
           TARGET: ${{ steps.config.outputs.target }}
           MAX_RESULTS: ${{ steps.config.outputs.max_results }}
           MEDIA_ONLY: ${{ steps.config.outputs.media_only }}
-          START_DATE: ${{ steps.config.outputs.start_date }}
-          END_DATE: ${{ steps.config.outputs.end_date }}
+          RAW_QUERY: ${{ steps.config.outputs.raw_query }}
         run: node scraper.js
