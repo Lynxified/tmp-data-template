@@ -1,8 +1,6 @@
 ﻿name: Guildera Scraper
 
 on:
-  schedule:
-    - cron: '0 */6 * * *'
   workflow_dispatch:
     inputs:
       source_type:
@@ -30,8 +28,6 @@ on:
         required: false
         default: ''
         type: string
-  repository_dispatch:
-    types: [trigger-scrape]
 
 jobs:
   scrape:
