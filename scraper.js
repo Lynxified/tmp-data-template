@@ -15,6 +15,7 @@ console.log('SOURCE_TYPE:', process.env.SOURCE_TYPE);
 console.log('TARGET:', process.env.TARGET);
 console.log('MAX_RESULTS:', process.env.MAX_RESULTS);
 console.log('MEDIA_ONLY:', process.env.MEDIA_ONLY);
+console.log('KEY_HASH (first 12):', keyHash ? keyHash.substring(0, 12) + '...' : 'EMPTY');
 console.log('=== CONFIG from JSON ===');
 console.log(JSON.stringify(config, null, 2));
 
@@ -175,7 +176,7 @@ function extractDateFromText(text) {
   console.log(`Scraping: ${url}`);
 
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-  await page.waitForTimeout(8000);
+  await page.waitForTimeout(4000);
 
   const collectedIds = new Set();
   const posts = [];
@@ -349,8 +350,8 @@ function extractDateFromText(text) {
       consecutiveEmptyScrolls = 0;
     }
     if (posts.length >= maxResults) break;
-    await page.evaluate(() => window.scrollBy(0, 1200));
-    await page.waitForTimeout(3000);
+    await page.evaluate(() => window.scrollBy(0, 2400));
+    await page.waitForTimeout(1500);
     scrollAttempts++;
   }
   console.log(`Final collection: ${posts.length} posts`);
