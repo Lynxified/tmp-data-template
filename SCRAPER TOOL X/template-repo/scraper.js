@@ -127,47 +127,48 @@ function extractDateFromText(text) {
       break;
     }
     case 'hashtag': {
-      // Extract dates from target if present
       let tagText = target.replace('#', '').trim();
-      let tag = tagText.split(/\s+/)[0]; // Just the hashtag word
-      let searchUrl = `https://x.com/search?q=%23${encodeURIComponent(tag)}`;
+      let tag = tagText.split(/\s+/)[0];
+      let q = `%23${encodeURIComponent(tag)}`;
       const sinceMatch = target.match(/\bsince:(\S+)/i);
       const untilMatch = target.match(/\buntil:(\S+)/i);
-      if (sinceMatch) searchUrl += `%20since:${sinceMatch[1]}`;
-      else if (startDate) searchUrl += `%20since:${startDate}`;
-      if (untilMatch) searchUrl += `%20until:${untilMatch[1]}`;
-      else if (endDate) searchUrl += `%20until:${endDate}`;
-      searchUrl += '&src=typed_query&f=live';
-      url = searchUrl;
+      if (sinceMatch) q += `%20since:${sinceMatch[1]}`;
+      else if (startDate) q += `%20since:${startDate}`;
+      if (untilMatch) q += `%20until:${untilMatch[1]}`;
+      else if (endDate) q += `%20until:${endDate}`;
+      if (minLikes > 0) q += `%20min_faves:${minLikes}`;
+      if (minRetweets > 0) q += `%20min_retweets:${minRetweets}`;
+      if (minReplies > 0) q += `%20min_replies:${minReplies}`;
+      url = `https://x.com/search?q=${q}&src=typed_query&f=live`;
       break;
     }
     case 'keyword': {
-      // Dates may already be baked into target, so just encode the whole thing
       let kwQuery = target;
       if (!/\b(since|until):/i.test(kwQuery)) {
-        // No dates in target, add from env if present
         if (startDate) kwQuery += ` since:${startDate}`;
         if (endDate) kwQuery += ` until:${endDate}`;
       }
-      let searchUrl = `https://x.com/search?q=${encodeURIComponent(kwQuery)}`;
-      searchUrl += '&src=typed_query&f=live';
-      url = searchUrl;
+      let q = encodeURIComponent(kwQuery);
+      if (minLikes > 0) q += `%20min_faves:${minLikes}`;
+      if (minRetweets > 0) q += `%20min_retweets:${minRetweets}`;
+      if (minReplies > 0) q += `%20min_replies:${minReplies}`;
+      url = `https://x.com/search?q=${q}&src=typed_query&f=live`;
       break;
     }
     case 'cashtag': {
-      // Extract dates from target if present (e.g., "$RMV since:2026-08-01 until:2026-08-23")
       let tagText = target.replace('$', '').trim();
-      let tag = tagText.split(/\s+/)[0]; // Just the ticker symbol
-      let searchUrl = `https://x.com/search?q=%24${encodeURIComponent(tag)}`;
-      // Check for since/until in target
+      let tag = tagText.split(/\s+/)[0];
+      let q = `%24${encodeURIComponent(tag)}`;
       const sinceMatch = target.match(/\bsince:(\S+)/i);
       const untilMatch = target.match(/\buntil:(\S+)/i);
-      if (sinceMatch) searchUrl += `%20since:${sinceMatch[1]}`;
-      else if (startDate) searchUrl += `%20since:${startDate}`;
-      if (untilMatch) searchUrl += `%20until:${untilMatch[1]}`;
-      else if (endDate) searchUrl += `%20until:${endDate}`;
-      searchUrl += '&src=typed_query&f=live';
-      url = searchUrl;
+      if (sinceMatch) q += `%20since:${sinceMatch[1]}`;
+      else if (startDate) q += `%20since:${startDate}`;
+      if (untilMatch) q += `%20until:${untilMatch[1]}`;
+      else if (endDate) q += `%20until:${endDate}`;
+      if (minLikes > 0) q += `%20min_faves:${minLikes}`;
+      if (minRetweets > 0) q += `%20min_retweets:${minRetweets}`;
+      if (minReplies > 0) q += `%20min_replies:${minReplies}`;
+      url = `https://x.com/search?q=${q}&src=typed_query&f=live`;
       break;
     }
     case 'url': {
@@ -419,11 +420,8 @@ function extractDateFromText(text) {
   });
 
   const beforeFilter = unique.length;
-  if (minLikes > 0) unique = unique.filter(p => (p.like_count || 0) >= minLikes);
-  if (minRetweets > 0) unique = unique.filter(p => (p.retweet_count || 0) >= minRetweets);
-  if (minReplies > 0) unique = unique.filter(p => (p.reply_count || 0) >= minReplies);
   if (minViews > 0) unique = unique.filter(p => (p.view_count || 0) >= minViews);
-  if (unique.length < beforeFilter) console.log(`Engagement filter: ${beforeFilter} -> ${unique.length} posts (min_likes=${minLikes}, min_retweets=${minRetweets}, min_replies=${minReplies}, min_views=${minViews})`);
+  if (unique.length < beforeFilter) console.log(`View filter: ${beforeFilter} -> ${unique.length} posts (min_views=${minViews})`);
 
   console.log(`Saving ${unique.length} posts to Supabase...`);
 
