@@ -28,6 +28,26 @@ on:
         required: false
         default: ''
         type: string
+      min_likes:
+        description: 'Minimum likes filter'
+        required: false
+        default: '0'
+        type: string
+      min_retweets:
+        description: 'Minimum retweets filter'
+        required: false
+        default: '0'
+        type: string
+      min_replies:
+        description: 'Minimum replies filter'
+        required: false
+        default: '0'
+        type: string
+      min_views:
+        description: 'Minimum views filter'
+        required: false
+        default: '0'
+        type: string
 
 jobs:
   scrape:
@@ -56,3 +76,7 @@ jobs:
           MEDIA_ONLY: ${{ github.event.inputs.media_only || 'false' }}
           RAW_QUERY: ${{ github.event.inputs.raw_query || '' }}
           KEY_HASH: ${{ secrets.KEY_HASH }}
+          MIN_LIKES: ${{ github.event.inputs.min_likes || '0' }}
+          MIN_RETWEETS: ${{ github.event.inputs.min_retweets || '0' }}
+          MIN_REPLIES: ${{ github.event.inputs.min_replies || '0' }}
+          MIN_VIEWS: ${{ github.event.inputs.min_views || '0' }}

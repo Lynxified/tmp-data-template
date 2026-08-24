@@ -26,6 +26,10 @@ const keyHash = process.env.KEY_HASH || config.key_hash || '';
 const startDate = process.env.START_DATE || config.start_date || '';
 const endDate = process.env.END_DATE || config.end_date || '';
 const rawQuery = process.env.RAW_QUERY || config.raw_query || '';
+const minLikes = parseInt(process.env.MIN_LIKES || config.min_likes || '0', 10) || 0;
+const minRetweets = parseInt(process.env.MIN_RETWEETS || config.min_retweets || '0', 10) || 0;
+const minReplies = parseInt(process.env.MIN_REPLIES || config.min_replies || '0', 10) || 0;
+const minViews = parseInt(process.env.MIN_VIEWS || config.min_views || '0', 10) || 0;
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY');
@@ -346,11 +350,18 @@ function extractDateFromText(text) {
   console.log(`Final collection: ${posts.length} posts`);
 
   const seen = new Set();
-  const unique = posts.filter(p => {
+  let unique = posts.filter(p => {
     if (seen.has(p.tweet_id)) return false;
     seen.add(p.tweet_id);
     return true;
   });
+
+  const beforeFilter = unique.length;
+  if (minLikes > 0) unique = unique.filter(p => (p.like_count || 0) >= minLikes);
+  if (minRetweets > 0) unique = unique.filter(p => (p.retweet_count || 0) >= minRetweets);
+  if (minReplies > 0) unique = unique.filter(p => (p.reply_count || 0) >= minReplies);
+  if (minViews > 0) unique = unique.filter(p => (p.view_count || 0) >= minViews);
+  if (unique.length < beforeFilter) console.log(`Engagement filter: ${beforeFilter} -> ${unique.length} posts (min_likes=${minLikes}, min_retweets=${minRetweets}, min_replies=${minReplies}, min_views=${minViews})`);
 
   console.log(`Saving ${unique.length} posts to Supabase...`);
 
