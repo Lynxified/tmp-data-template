@@ -60,7 +60,14 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - run: npx playwright install chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
       - name: Decode auth cookies
         run: echo "$X_STATE" | base64 -d > state.json
         env:
