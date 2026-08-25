@@ -15,7 +15,6 @@ console.log('SOURCE_TYPE:', process.env.SOURCE_TYPE);
 console.log('TARGET:', process.env.TARGET);
 console.log('MAX_RESULTS:', process.env.MAX_RESULTS);
 console.log('MEDIA_ONLY:', process.env.MEDIA_ONLY);
-console.log('KEY_HASH (first 12):', keyHash ? keyHash.substring(0, 12) + '...' : 'EMPTY');
 console.log('=== CONFIG from JSON ===');
 console.log(JSON.stringify(config, null, 2));
 
@@ -24,6 +23,7 @@ const target = process.env.TARGET || config.target || '';
 const maxResults = parseInt(process.env.MAX_RESULTS || config.max_results, 10) || 10;
 const mediaOnly = (process.env.MEDIA_ONLY === 'true') || (config.media_only === true);
 const keyHash = process.env.KEY_HASH || config.key_hash || '';
+console.log('KEY_HASH (first 12):', keyHash ? keyHash.substring(0, 12) + '...' : 'EMPTY');
 const startDate = process.env.START_DATE || config.start_date || '';
 const endDate = process.env.END_DATE || config.end_date || '';
 const rawQuery = process.env.RAW_QUERY || config.raw_query || '';
