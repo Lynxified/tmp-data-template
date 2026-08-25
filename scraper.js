@@ -242,6 +242,17 @@ function extractDateFromText(text) {
 
         let hasMedia = false;
         const mediaUrls = [];
+        let authorAvatar = '';
+        let isVerified = false;
+        try {
+          const avatarEl = tweet.locator('img[src*="profile_images"]').first();
+          const avatarSrc = await avatarEl.getAttribute('src', { timeout: 2000 });
+          if (avatarSrc) authorAvatar = avatarSrc.split('?')[0];
+        } catch(e) {}
+        try {
+          const verifiedEl = tweet.locator('[aria-label="Verified account"], [aria-label="Verified"]').first();
+          isVerified = await verifiedEl.count({ timeout: 1000 }) > 0;
+        } catch(e) {}
         try {
           const imgEls = tweet.locator('img[src*="pbs.twimg.com/media"], img[src*="pbs.twimg.com/card_media"], img[src*="pbs.twimg.com/ext_tw_video"]');
           const imgCount = await imgEls.count({ timeout: 2000 });
@@ -327,6 +338,8 @@ function extractDateFromText(text) {
           quote_count: quoteCount,
           has_media: hasMedia,
           media_urls: mediaUrls.length > 0 ? JSON.stringify(mediaUrls) : '',
+          author_avatar: authorAvatar,
+          is_verified: isVerified,
           api_key_hash: keyHash,
         });
         newCount++;
